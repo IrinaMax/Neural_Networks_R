@@ -1,0 +1,53 @@
+# nearal neywork
+library(dplyr)
+install.packages('MASS')
+install.packages('neuralnet')
+#normalise our data
+library(neuralnet)
+library(MASS)
+library(caTools)
+data <- Boston
+
+maxs <-apply( data, 2, max)
+maxs
+mins <- apply(data,2,min)
+
+scaled.data<- scale(data, center = mins, scale = maxs-mins)
+scaled.data
+
+scaled <- as.data.frame(scaled.data)
+scaled %>% head
+split <- sample.split(scaled$medv, SplitRatio = 0.7)
+train <- subset(scaled,split ==T)
+test <- subset(scaled, split ==F)
+
+train %>% head                     
+
+n <- names(train)
+n
+f <- as.formula(paste("medv ~", paste(n[!n %in% "medv"], collapse = " + ")))
+f
+nn <- neuralnet(f, data =train, hidden = c(5,3), linear.output = TRUE)
+plot(nn) 
+
+predicted <- compute(nn, test[1:13])
+str(predicted)
+
+#unnormalise back
+true.predicted <- predicted$net.result * (max(data$medv)-min(data$medv))+min(data$medv)
+true.predicted
+
+#convert to the test also for compare with true predicted
+test.r <- test$medv* (max(data$medv)-min(data$medv))+min(data$medv)
+test.r
+
+MSE.nn <- sum((test.r -true.predicted)^2/nrow(test))
+MSE.nn
+
+error.df <- data.frame(test.r, true.predicted)
+error.df %>% head
+
+
+#
+library(ggplot2)
+ggplot(error.df, aes(test.r, y=true.predicted)) + geom_point() + stat_smooth()
