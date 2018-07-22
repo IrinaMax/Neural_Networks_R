@@ -15,7 +15,7 @@ for (i in 1:12) {mypic[[i]] <- readImage(pics[i])}
 # Explore
 print(mypic[[1]])
 display(mypic[[1]])
-display (mypic[[1]][1:5,1:100,1])
+
 display(mypic[[8]])
 summary(mypic[[1]])
 hist(mypic[[12]])
@@ -25,9 +25,10 @@ str(mypic)
 for (i in 1:12) {mypic[[i]] <- resize(mypic[[i]],28 , 28)}
 
 #
-# Reshape
+# Reshape to array
 for (i in 1:12) {mypic[[i]] <- array_reshape(mypic[[i]], c(28,28,3))}
 str(mypic)
+summary(mypic)
 # Row Bind
 trainx <- NULL
 # use first 5 and othe 5 avter 6 to make a train
