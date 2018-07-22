@@ -1,0 +1,83 @@
+# This code will show CNN with classification of 12 picture of 6 cars and 6 airplanes
+
+# Load Packages
+library(EBImage)
+library(keras)
+
+# Read images
+setwd('/Users/irinamahmudjanova/Documents/STUDY/DATA_SCIENCE/R_Udemy/R-Course-HTML-Notes/R-for-Data-Science-and-Machine-Learning/Machine Learning with R/images')
+pics <- c('p1.jpg', 'p2.jpg', 'p3.jpg', 'p4.jpg', 'p5.jpg', 'p6.jpg',
+          'c1.jpg', 'c2.jpg', 'c3.jpg', 'c4.jpg', 'c5.jpg', 'c6.jpg')
+pics
+mypic <- list()
+for (i in 1:12) {mypic[[i]] <- readImage(pics[i])}
+
+# Explore
+print(mypic[[1]])
+display(mypic[[1]])
+display (mypic[[1]][1:5,1:100,1])
+display(mypic[[8]])
+summary(mypic[[1]])
+hist(mypic[[12]])
+str(mypic)
+
+# Resize 28*28*3
+for (i in 1:12) {mypic[[i]] <- resize(mypic[[i]],28 , 28)}
+
+#
+# Reshape
+for (i in 1:12) {mypic[[i]] <- array_reshape(mypic[[i]], c(28,28,3))}
+str(mypic)
+# Row Bind
+trainx <- NULL
+# use first 5 and othe 5 avter 6 to make a train
+for (i in 1:5) {trainx <- rbind(trainx, mypic[[i]])} 
+
+for (i in 7:11) {trainx <- rbind(trainx, mypic[[i]])}
+str(trainx)
+testx <- rbind(mypic[[6]], mypic[[12]])
+# 0 is plane and 0 is car
+trainy <- c(0,0,0,0,0,1,1,1,1,1 )
+testy <- c(0,1)
+
+# One Hot Encoding
+trainLabels <- to_categorical(trainy)
+testLabels <- to_categorical(testy)
+trainLabels
+# Model
+model <- keras_model_sequential()
+# look at str where we see 2352 as imput
+model %>%
+         layer_dense(units = 256, activation = 'relu', input_shape = c(2352)) %>%
+         layer_dense(units = 128, activation = 'relu') %>%
+         layer_dense(units = 2, activation = 'softmax')
+summary(model)
+
+# Compile
+model %>%
+         compile(loss = 'binary_crossentropy',
+                 optimizer = optimizer_rmsprop(),
+                 metrics = c('accuracy'))
+
+# Fit Model
+history <- model %>%
+         fit(trainx,
+             trainLabels,
+             epochs = 30,
+             batch_size = 32,
+             validation_split = 0.2)
+plot(history)
+# Evaluation & Prediction - train data
+model %>% evaluate(trainx,trainLabels)
+pred <- model %>% predict_classes(trainx)
+table(Predicted = pred, Actual = trainy)
+prob <- model %>% predict_proba(trainx)
+prob
+cbind(prob, Prected = pred, Actual= trainy)
+display(mypic[[11]])
+# evaluation on test
+model %>% evaluate(testx, testLabels)
+pred <- model %>% predict_classes(testx)
+pred
+table(Predicted = pred, Actual= testy)
+display(mypic[[6]])
