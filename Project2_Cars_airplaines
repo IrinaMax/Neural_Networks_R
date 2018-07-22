@@ -15,7 +15,7 @@ for (i in 1:12) {mypic[[i]] <- readImage(pics[i])}
 # Explore
 print(mypic[[1]])
 display(mypic[[1]])
-
+display (mypic[[1]][1:5,1:100,1]) # part of picture
 display(mypic[[8]])
 summary(mypic[[1]])
 hist(mypic[[12]])
