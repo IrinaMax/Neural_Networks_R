@@ -1,0 +1,93 @@
+# This script wos wrote in 2016 I participated Kaggle competition for Face recognition dataset.
+# I used library do MC, all data in my kaggle foder.
+
+setwd(Face_R)
+##data.dir   <- '~/data/kaggle/facial_keypoint_detection/'
+##train.file <- paste0(data.dir, 'training.csv')
+##test.file  <- paste0(data.dir, 'test.csv')
+??paste0
+##load the data
+##d.train <- read.csv(train.file, stringsAsFactors=F)
+d.train <- read.csv("training.csv", stringsAsFactor = F)
+str(d.train)
+head(d.train)
+## rename colomn Image to im.train and treat it separatly
+im.train      <- d.train$Image
+d.train$Image <- NULL
+head(im.train)  ## contain a very long string with numbers....
+
+## Lets revert the string to the integers: this is ther first line:
+as.integer(unlist(strsplit(im.train[1], " ")))
+
+##But there is a more then 7000 lines and we need them also,
+## so we do it with packege doMC, we need to download it from CRAN and registre it.
+install.packages(doMC)
+library(doMC)
+registerDoMC()
+
+##Now we going to do parallelisation
+im.train <- foreach(im = im.train, .combine=rbind) %dopar% 
+  { as.integer(unlist(strsplit(im, " ")))
+}
+str(im.train)
+head(im.train)
+head(d.train)
+## repead process with testing set
+d.test <- read.csv("test.csv", stringsAsFactors = F)
+im.test <- foreach(im = d.test$Image, .combine = rbind) %dopar%
+{ as.integer(unlist(strsplit(im, " ")))}
+head(im.test)
+d.test$Image <- NULL
+head(d.test)
+##Lets save data in the file, for next time easy to load them
+save(d.train, im.train, d.test, im.test, file="data.Rd")
+## load('data.Rd')  for load 
+
+## convert these 9216 integers into a 96x96 matrix to visualize every image 
+im <- matrix(data=rev(im.train[1,]), nrow=96, ncol=96)
+## Let's look at the first image to use image funcion
+image(1:96, 1:96, im, col=gray((0:255)/255))
+
+## Lets add points for coordinates eyes and nose
+points(96-d.train$nose_tip_x[1],         96-d.train$nose_tip_y[1],         col="red")
+points(96-d.train$left_eye_center_x[1],  96-d.train$left_eye_center_y[1],  col="blue")
+points(96-d.train$right_eye_center_x[1], 96-d.train$right_eye_center_y[1], col="green")
+
+## To points nose coordinats for all 7049 images
+for(i in 1:nrow(d.train)) {
+  points(96-d.train$nose_tip_x[i], 96-d.train$nose_tip_y[i], col="red")
+}
+
+## some of this outliers is kinda mistakes, as here
+idx <- which.max(d.train$nose_tip_x)
+im  <- matrix(data=rev(im.train[idx,]), nrow=96, ncol=96)
+image(1:96, 1:96, im, col=gray((0:255)/255))
+points(96-d.train$nose_tip_x[idx], 96-d.train$nose_tip_y[idx], col="red")
+
+## The simplest benchmark is to compute the mean of the coordinates of each keypoint in the train
+## and use that as a prediction for all images. This simplistic algorithm, as it completely 
+## ignores the images, but we can use it a starting point to build a first submission.
+## na.rm=T tells colMeans to ignore missing values
+colMeans(d.train, na.rm=T)
+
+## Apply this coordinates to the test instances
+p           <- matrix(data=colMeans(d.train, na.rm=T), nrow=nrow(d.test), ncol=ncol(d.train), byrow=T)
+colnames(p) <- names(d.train)
+predictions <- data.frame(ImageId = 1:nrow(d.test), p)
+head(predictions)
+
+# submission format suppose to have one one key per row, 
+# so we can reshape it with "reshape2"liblary
+
+install.packages('reshape2')
+library(reshape2)
+submission_face_rec <- melt(predictions, id.vars="ImageId", variable.name="FeatureName", value.name="Location")
+head(submission_face_rec)
+
+example.submission <- read.csv('SampleSubmission.csv', stringsAsFactors = F)
+head(example.submission)
+sub.col.names      <- names(example.submission)
+example.submission$Location <- NULL
+submission <- merge(example.submission, submission_, all.x=T, sort=F)
+submission <- submission[, sub.col.names]
+write.csv(submission, file="submission_means.csv", quote=F, row.names=F)
