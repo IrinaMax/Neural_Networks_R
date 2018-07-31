@@ -1,5 +1,5 @@
 # This script wos wrote in 2016 I participated Kaggle competition for Face recognition dataset.
-# I used library do MC, all data in my kaggle foder.
+# I used library do MC and reshape2 for submission, all data in my kaggle foder.
 
 setwd(Face_R)
 ##data.dir   <- '~/data/kaggle/facial_keypoint_detection/'
