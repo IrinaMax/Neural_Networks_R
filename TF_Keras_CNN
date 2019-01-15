@@ -1,5 +1,4 @@
-# Convolutional Neural Networks
-
+# Convolutional Neural Networks woth Kera and Tesorflow
 
 # Load packages
 library(keras)
